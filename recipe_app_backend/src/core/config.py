@@ -14,9 +14,26 @@ class Settings(BaseModel):
     # Database
     database_url: str
 
-    # CORS and other app-level settings can be extended later
+    # App
     app_name: str = "Recipe Hub Backend"
     environment: str = os.getenv("REACT_APP_NODE_ENV", "development")
+
+    # Auth / Security
+    secret_key: str = os.getenv("SECRET_KEY", "CHANGE_ME_IN_PRODUCTION")
+    access_token_expire_minutes: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60"))
+    jwt_algorithm: str = os.getenv("JWT_ALGORITHM", "HS256")
+    jwt_issuer: str = os.getenv("JWT_ISSUER", "recipe-hub")
+    jwt_audience: str | None = os.getenv("JWT_AUDIENCE")
+
+    # CORS
+    frontend_origin: str | None = os.getenv("FRONTEND_ORIGIN")
+
+    # Media
+    media_dir: str = os.getenv(
+        "MEDIA_DIR",
+        os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "media")),
+    )
+    media_url_prefix: str = os.getenv("MEDIA_URL_PREFIX", "/media")
 
     @staticmethod
     def _default_database_url() -> str:
