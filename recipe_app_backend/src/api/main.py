@@ -12,7 +12,41 @@ API_TITLE = "Recipe Hub Backend"
 API_DESC = "API for recipe browsing, search, and management."
 API_VERSION = "0.1.0"
 
-CORS_ORIGINS = [o.strip() for o in os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",") if o.strip()]
+# Build CORS origins:
+# - Prefer explicit CORS_ORIGINS (comma-separated)
+# - Else derive from FRONTEND_ORIGIN or REACT_APP_FRONTEND_URL if provided
+# - Always include localhost dev default
+_default_frontend = "http://localhost:3000"
+explicit = [o.strip() for o in os.getenv("CORS_ORIGINS", "").split(",") if o.strip()]
+derived = []
+for key in ["FRONTEND_ORIGIN", "REACT_APP_FRONTEND_URL"]:
+    val = os.getenv(key)
+    if val and val.strip():
+        derived.append(val.strip())
+# Normalize to include both http and https variants for preview URLs when scheme differs
+def _variants(url: str) -> list[str]:
+    try:
+        from urllib.parse import urlparse, urlunparse
+        p = urlparse(url)
+        hosts = []
+        if p.scheme in ("http", "https"):
+            other = "https" if p.scheme == "http" else "http"
+            hosts = [
+                urlunparse(p),
+                urlunparse(p._replace(scheme=other)),
+            ]
+        else:
+            hosts = [url]
+        return hosts
+    except Exception:
+        return [url]
+
+origins = set()
+for item in (explicit or []) + (derived or []) + [_default_frontend]:
+    for v in _variants(item):
+        origins.add(v.rstrip("/"))
+
+CORS_ORIGINS = sorted(list(origins))
 MEDIA_DIR = os.getenv("MEDIA_DIR", "./media")
 
 # For demonstration we keep in-memory data structures.
